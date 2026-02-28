@@ -2,6 +2,14 @@
 #define __SERVER__
 #define BACKLOG 5
 
+#ifdef _WIN32
+    #include <winsock2.h>
+    #define CLOSE closesocket
+#elif __linux__
+    #include <unistd.h>
+    #define CLOSE close
+#endif
+
 #include <cstdint>
 #include <netinet/in.h>
 #include <string>

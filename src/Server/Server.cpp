@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 /*
  *
@@ -52,7 +53,18 @@ Server::Server(IpAddress& ip, const uint16_t port)
 void Server::OnStart()
 {
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-    bind(serverSocket, (struct sockaddr*)&this->m_serverAddress, sizeof(this->m_serverAddress));
+    bind(serverSocket, (sockaddr*)&this->m_serverAddress, sizeof(this->m_serverAddress));
     listen(serverSocket, BACKLOG);
     std::cout << "Server listenning on " << this->m_ipAddress << ":" << this->m_port << std::endl;
+
+    while(true)
+    {
+        int clientSocket = accept(serverSocket, nullptr, nullptr);
+        char buffer[1024];
+        recv(clientSocket, buffer, sizeof(buffer), 0);
+        std::cout << "Message : " << buffer << std::endl;
+        CLOSE(clientSocket);
+    }
+
+    CLOSE(serverSocket);
 }
