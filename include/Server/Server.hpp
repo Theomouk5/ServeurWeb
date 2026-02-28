@@ -5,13 +5,15 @@
 #ifdef _WIN32
     #include <winsock2.h>
     #define CLOSE closesocket
+    #define SOCKET_TYPE SOCKET
 #elif __linux__
     #include <unistd.h>
+    #include <netinet/in.h>
     #define CLOSE close
+    #define SOCKET_TYPE int
 #endif
 
 #include <cstdint>
-#include <netinet/in.h>
 #include <string>
 #include <ostream>
 

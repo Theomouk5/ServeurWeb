@@ -1,11 +1,17 @@
 #include "../../include/Server/Server.hpp"
 #include <iostream>
 #include <string>
-#include <arpa/inet.h>
 #include <cstdint>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
+#if __linux__
+    #include <arpa/inet.h>
+    #include <netinet/in.h>
+    #include <sys/socket.h>
+#elif _WIN32
+    #define WIN32_LEAN_AND_MEAN
+    #include <WinSock2.h>
+    #include <WS2tcpip.h>
+    #pragma comment(lib, "Ws2_32.lib")
+#endif
 
 /*
  *
@@ -52,19 +58,31 @@ Server::Server(IpAddress& ip, const uint16_t port)
 
 void Server::OnStart()
 {
-    int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    #ifdef _WIN32 // Initialisation WinSock
+        WSADATA wsaData;
+        if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+            std::cerr << "WSAStartup failed\n";
+            return;
+        }
+    #endif
+
+    SOCKET_TYPE serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     bind(serverSocket, (sockaddr*)&this->m_serverAddress, sizeof(this->m_serverAddress));
     listen(serverSocket, BACKLOG);
     std::cout << "Server listenning on " << this->m_ipAddress << ":" << this->m_port << std::endl;
 
     while(true)
     {
-        int clientSocket = accept(serverSocket, nullptr, nullptr);
-        char buffer[1024];
+        SOCKET_TYPE clientSocket = accept(serverSocket, nullptr, nullptr);
+        char buffer[1024] = { 0 };
         recv(clientSocket, buffer, sizeof(buffer), 0);
         std::cout << "Message : " << buffer << std::endl;
         CLOSE(clientSocket);
     }
 
     CLOSE(serverSocket);
+
+    #ifdef _WIN32
+        WSACleanup();
+    #endif
 }
