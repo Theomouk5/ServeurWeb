@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string>
 #include <cstdint>
+#include <vector>
+#include <thread>
 #if __linux__
     #include <arpa/inet.h>
     #include <netinet/in.h>
@@ -66,8 +68,11 @@ void Server::OnStart()
         }
     #endif
 
+    std::vector<std::thread> threadPool;
+
     SOCKET_TYPE serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     bind(serverSocket, (sockaddr*)&this->m_serverAddress, sizeof(this->m_serverAddress));
+
     listen(serverSocket, BACKLOG);
     std::cout << "Server listenning on " << this->m_ipAddress << ":" << this->m_port << std::endl;
 
