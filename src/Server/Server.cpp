@@ -58,11 +58,8 @@ Server::Server(IpAddress& ip, const uint16_t port)
     inet_pton(AF_INET, ip.getStrIpAddress().c_str(), &this->m_serverAddress.sin_addr); // Str -> Binaire (IP)
     this->m_serverAddress.sin_port = htons(port);
     this->m_serverAddress.sin_family = AF_INET;
-    this->m_threadPool = {
-        std::thread([&]() {this->HandleRequest();}),
-        std::thread([&]() {this->HandleRequest();})
-    };
-
+    this->m_threadPool.push_back(std::thread(&Server::HandleRequest, this));
+    this->m_threadPool.push_back(std::thread(&Server::HandleRequest, this));
     this->m_queue.running = true;
 }
 
