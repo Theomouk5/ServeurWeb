@@ -100,8 +100,18 @@ void Server::OnStart()
 
 void Server::HandleRequest()
 {
-    while(!this->m_queue.clientQueue.empty() || this->m_queue.running == true)
+    while(!this->m_queue.clientQueue.empty() || this->m_queue.running)
     {
+        std::unique_lock<std::mutex> lock(this->m_queue.mtx);
+        this->m_queue.condVar.wait(lock, [&]() { return !this->m_queue.clientQueue.empty(); });
 
+        SOCKET_TYPE client = this->m_queue.clientQueue.front();
+        this->m_queue.clientQueue.pop();
+
+        char buffer[1024];
+        recv(client, buffer, sizeof(buffer), 0);
+        std::cout << "message : " << buffer << std::endl;
+
+        CLOSE(client);
     }
 }
