@@ -2,8 +2,10 @@
 #include <iostream>
 #include <string>
 #include <cstdint>
-#include <vector>
 #include <thread>
+#include <queue>
+#include <mutex>
+
 #if __linux__
     #include <arpa/inet.h>
     #include <netinet/in.h>
@@ -53,9 +55,15 @@ std::ostream& operator<<(std::ostream& os, const IpAddress& ip)
 Server::Server(IpAddress& ip, const uint16_t port)
 : m_port(port), m_ipAddress(ip)
 {
+    inet_pton(AF_INET, ip.getStrIpAddress().c_str(), &this->m_serverAddress.sin_addr); // Str -> Binaire (IP)
     this->m_serverAddress.sin_port = htons(port);
     this->m_serverAddress.sin_family = AF_INET;
-    inet_pton(AF_INET, ip.getStrIpAddress().c_str(), &this->m_serverAddress.sin_addr); // Str -> Binaire (IP)
+    this->m_threadPool = {
+        std::thread([&]() {this->HandleRequest();}),
+        std::thread([&]() {this->HandleRequest();})
+    };
+
+    this->m_queue.running = true;
 }
 
 void Server::OnStart()
@@ -68,8 +76,6 @@ void Server::OnStart()
         }
     #endif
 
-    std::vector<std::thread> threadPool;
-
     SOCKET_TYPE serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     bind(serverSocket, (sockaddr*)&this->m_serverAddress, sizeof(this->m_serverAddress));
 
@@ -79,10 +85,10 @@ void Server::OnStart()
     while(true)
     {
         SOCKET_TYPE clientSocket = accept(serverSocket, nullptr, nullptr);
-        char buffer[1024] = { 0 };
-        recv(clientSocket, buffer, sizeof(buffer), 0);
-        std::cout << "Message : " << buffer << std::endl;
-        CLOSE(clientSocket);
+        std::unique_lock<std::mutex> lock(this->m_queue.mtx);
+        this->m_queue.clientQueue.push(clientSocket);
+        lock.unlock();
+        this->m_queue.condVar.notify_one();
     }
 
     CLOSE(serverSocket);
@@ -90,4 +96,12 @@ void Server::OnStart()
     #ifdef _WIN32
         WSACleanup();
     #endif
+}
+
+void Server::HandleRequest()
+{
+    while(!this->m_queue.clientQueue.empty() || this->m_queue.running == true)
+    {
+
+    }
 }

@@ -13,10 +13,22 @@
     #define SOCKET_TYPE int
 #endif
 
+#include <thread>
+#include <vector>
 #include <cstdint>
 #include <string>
 #include <ostream>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
 
+struct ThreadSafeQueue
+{
+    std::mutex mtx;
+    std::condition_variable condVar;
+    std::queue<SOCKET_TYPE> clientQueue;
+    bool running;
+};
 
 class IpAddress
 {
@@ -40,11 +52,14 @@ class Server
         Server() = delete;
         Server(IpAddress& ip, const uint16_t port);
         void OnStart();
+        void HandleRequest();
 
     private:
-        sockaddr_in    m_serverAddress;
-        IpAddress      m_ipAddress;
-        const uint16_t m_port;
+        ThreadSafeQueue          m_queue;
+        std::vector<std::thread> m_threadPool;
+        sockaddr_in              m_serverAddress;
+        IpAddress                m_ipAddress;
+        const uint16_t           m_port;
 };
 
 #endif
