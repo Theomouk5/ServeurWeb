@@ -1,6 +1,6 @@
 #include "../include/Server/Server.hpp"
 
-int main()
+int main(int argc, char** argv)
 {
     IpAddress ip = {192, 168, 1, 68};
     Server server = Server(ip, 8080);
