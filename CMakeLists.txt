@@ -3,6 +3,6 @@ project(ServeurWeb VERSION "1.0.0" LANGUAGES CXX)
 add_executable(Server
     "src/main.cpp"
     "src/Server/Server.cpp"
-    "include/Server/Server.hpp"
+    "src/Util/string.cpp"
 )
 target_include_directories(Server PRIVATE "include")

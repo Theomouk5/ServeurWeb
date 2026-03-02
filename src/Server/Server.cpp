@@ -1,4 +1,5 @@
 #include "../../include/Server/Server.hpp"
+#include "../../include/Util/string.hpp"
 #include <iostream>
 #include <string>
 #include <cstdint>
@@ -60,6 +61,7 @@ Server::Server(IpAddress& ip, const uint16_t port)
     this->m_serverAddress.sin_family = AF_INET;
     this->m_threadPool.push_back(std::thread(&Server::HandleRequest, this));
     this->m_threadPool.push_back(std::thread(&Server::HandleRequest, this));
+    this->m_threadPool.push_back(std::thread(&Server::HandleRequest, this));
     this->m_queue.running = true;
 }
 
@@ -104,10 +106,16 @@ void Server::HandleRequest()
 
         SOCKET_TYPE client = this->m_queue.clientQueue.front();
         this->m_queue.clientQueue.pop();
+        lock.unlock();
 
         char buffer[1024];
         recv(client, buffer, sizeof(buffer), 0);
-        std::cout << "message : " << buffer << std::endl;
+        std::vector<std::string> lines = Util::splitLines(buffer);
+
+        for(int i = 0; i < std::size(lines); i++)
+        {
+            std::cout << "lines " << i << " : " << lines[i] << std::endl;
+        }
 
         CLOSE(client);
     }
