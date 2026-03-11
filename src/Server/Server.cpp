@@ -110,11 +110,21 @@ void Server::HandleRequest()
 
         char buffer[1024];
         recv(client, buffer, sizeof(buffer), 0);
-        std::vector<std::string> lines = Util::splitLines(buffer);
 
-        for(int i = 0; i < std::size(lines); i++)
+        std::vector<std::string> lines = Util::splitLines(buffer);
+        std::string requestMethod = lines[0].substr(0, lines[0].find(" HTTP/"));
+
+        if(requestMethod == "GET /hello")
         {
-            std::cout << "lines " << i << " : " << lines[i] << std::endl;
+            std::cout << "Hello World\n";
+        }
+        else if(requestMethod == "GET /")
+        {
+            std::cout << "Menu Home\n";
+        }
+        else
+        {
+            std::cout << "Non Reconnu";
         }
 
         CLOSE(client);
